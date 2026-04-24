@@ -56,6 +56,25 @@ def test_strips_whitespace(temp_repo: Path) -> None:
     assert "temp" in result.exclude
 
 
+def test_strips_trailing_slash_on_directory_entry(temp_repo: Path) -> None:
+    cgrignore = temp_repo / CGRIGNORE_FILENAME
+    cgrignore.write_text(encoding="utf-8", data="dist/\nbuild/\nout\n")
+
+    result = load_cgrignore_patterns(temp_repo)
+
+    assert result.exclude == frozenset({"dist", "build", "out"})
+
+
+def test_strips_trailing_slash_on_unignore_entry(temp_repo: Path) -> None:
+    cgrignore = temp_repo / CGRIGNORE_FILENAME
+    cgrignore.write_text(encoding="utf-8", data="vendor/\n!vendor/keep/\n")
+
+    result = load_cgrignore_patterns(temp_repo)
+
+    assert result.exclude == frozenset({"vendor"})
+    assert result.unignore == frozenset({"vendor/keep"})
+
+
 def test_returns_empty_on_read_error(
     temp_repo: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

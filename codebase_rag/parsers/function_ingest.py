@@ -294,6 +294,12 @@ class FunctionIngestMixin:
                 ),
             )
 
+    _ARROW_NAME_BOUNDARIES = (
+        cs.TS_CALL_EXPRESSION,
+        cs.TS_ARGUMENTS,
+        cs.TS_OBJECT,
+    )
+
     def _extract_function_name(self, func_node: Node) -> str | None:
         name_node = func_node.child_by_field_name(cs.FIELD_NAME)
         if name_node and name_node.text:
@@ -302,6 +308,8 @@ class FunctionIngestMixin:
         if func_node.type == cs.TS_ARROW_FUNCTION:
             current = func_node.parent
             while current:
+                if current.type in self._ARROW_NAME_BOUNDARIES:
+                    return None
                 if current.type == cs.TS_VARIABLE_DECLARATOR:
                     for child in current.children:
                         if child.type == cs.TS_IDENTIFIER and child.text:

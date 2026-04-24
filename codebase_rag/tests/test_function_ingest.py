@@ -112,6 +112,74 @@ class TestExtractFunctionName:
         result = definition_processor._extract_function_name(func_node)
         assert result is None
 
+    def test_arrow_callback_in_setTimeout_is_not_named_after_outer_variable(
+        self,
+        definition_processor: DefinitionProcessor,
+        parsers_and_queries: tuple,
+    ) -> None:
+        parsers, _ = parsers_and_queries
+        if cs.SupportedLanguage.JS not in parsers:
+            pytest.skip("JavaScript parser not available")
+
+        code = "const t = setTimeout(() => { doThing(); }, 100);"
+        root = parse_code(code, cs.SupportedLanguage.JS, parsers)
+        arrow = find_first_node_of_type(root, "arrow_function")
+        assert arrow is not None
+
+        result = definition_processor._extract_function_name(arrow)
+        assert result is None
+
+    def test_arrow_callback_in_array_map_is_not_named_after_outer_variable(
+        self,
+        definition_processor: DefinitionProcessor,
+        parsers_and_queries: tuple,
+    ) -> None:
+        parsers, _ = parsers_and_queries
+        if cs.SupportedLanguage.JS not in parsers:
+            pytest.skip("JavaScript parser not available")
+
+        code = "const doubled = [1, 2, 3].map(x => x * 2);"
+        root = parse_code(code, cs.SupportedLanguage.JS, parsers)
+        arrow = find_first_node_of_type(root, "arrow_function")
+        assert arrow is not None
+
+        result = definition_processor._extract_function_name(arrow)
+        assert result is None
+
+    def test_arrow_as_object_property_value_is_not_named_after_outer_variable(
+        self,
+        definition_processor: DefinitionProcessor,
+        parsers_and_queries: tuple,
+    ) -> None:
+        parsers, _ = parsers_and_queries
+        if cs.SupportedLanguage.JS not in parsers:
+            pytest.skip("JavaScript parser not available")
+
+        code = "const cfg = { onClick: () => alert('hi') };"
+        root = parse_code(code, cs.SupportedLanguage.JS, parsers)
+        arrow = find_first_node_of_type(root, "arrow_function")
+        assert arrow is not None
+
+        result = definition_processor._extract_function_name(arrow)
+        assert result is None
+
+    def test_arrow_directly_bound_to_variable_is_still_named(
+        self,
+        definition_processor: DefinitionProcessor,
+        parsers_and_queries: tuple,
+    ) -> None:
+        parsers, _ = parsers_and_queries
+        if cs.SupportedLanguage.JS not in parsers:
+            pytest.skip("JavaScript parser not available")
+
+        code = "const handleClick = (e) => e.preventDefault();"
+        root = parse_code(code, cs.SupportedLanguage.JS, parsers)
+        arrow = find_first_node_of_type(root, "arrow_function")
+        assert arrow is not None
+
+        result = definition_processor._extract_function_name(arrow)
+        assert result == "handleClick"
+
 
 class TestGenerateAnonymousFunctionName:
     def test_iife_parenthesized(
